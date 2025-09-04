@@ -1,1 +1,1 @@
-# this is for the entire folder which I don't whether it will be necessary
+# this is for the entire folder but i'm definitely gonna change this
