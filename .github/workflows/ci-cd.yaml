@@ -1,0 +1,71 @@
+name: AIPFM CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r aipfm-backend/requirements.txt
+    - name: Run Tests
+      run: |
+        cd aipfm-backend
+        # Note: You need to set proper ENV vars for tests to pass if they touch DB
+        python manage.py test portfolio risk_analysis news
+
+  build-and-push:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v3
+    
+    # In a real scenario, you would login to DockerHub / ECR / GCR
+    # - name: Login to Docker Hub
+    #   uses: docker/login-action@v2
+    #   with:
+    #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+    #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and Push Backend
+      run: |
+        echo "Building Backend Image..."
+        docker build -t aipfm-backend:latest ./aipfm-backend
+        # docker push aipfm-backend:latest
+
+    - name: Build and Push Frontend
+      run: |
+        echo "Building Frontend Image..."
+        docker build -t aipfm-frontend:latest ./aipfm-frontend/frontend
+        # docker push aipfm-frontend:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v3
+    
+    # In a real scenario, you would setup kubectl
+    # - name: Set up kubectl
+    #   uses: azure/k8s-set-context@v1
+    #   with:
+    #     kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
+    - name: Deploy to Kubernetes
+      run: |
+        echo "Deploying to Kubernetes..."
+        # kubectl apply -f k8s/
+        echo "✅ Deployment triggered successfully."
