@@ -3,10 +3,11 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
+    env_file: ./aipfm-backend/.env
     environment:
-      - POSTGRES_DB=aipfm
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=${DB_NAME:-aipfm}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -19,22 +20,19 @@ services:
 
   api:
     build: ./aipfm-backend
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3
     volumes:
       - ./aipfm-backend:/app
     ports:
       - "8000:8000"
+    env_file: ./aipfm-backend/.env
     environment:
-      - DEBUG=True
-      - SECRET_KEY=django-insecure-dev-key
-      - DB_NAME=aipfm
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
       - DB_HOST=db
       - DB_PORT=5432
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,api,frontend
+      - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:80,http://localhost:5173
     depends_on:
       - db
       - redis
@@ -44,17 +42,12 @@ services:
     command: celery -A backend worker -l info
     volumes:
       - ./aipfm-backend:/app
+    env_file: ./aipfm-backend/.env
     environment:
-      - DEBUG=True
-      - SECRET_KEY=django-insecure-dev-key
-      - DB_NAME=aipfm
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
       - DB_HOST=db
       - DB_PORT=5432
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       - db
       - redis
