@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Algorithmic Portfolio Manager 🚀
 
 ## Project Overview
@@ -81,3 +82,6 @@ To verify the core functionality:
 ```bash
 docker-compose exec backend python manage.py test
 ```
+=======
+# this is for the entire folder but i'm definitely gonna change this
+>>>>>>> 0bebfe3101acfe382ad937751120bb3307f03c32
